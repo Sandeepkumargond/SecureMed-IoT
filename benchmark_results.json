@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-11-21T04:50:46Z",
+  "encryption": {
+    "n": 10000,
+    "total_sec": 3.53326,
+    "avg_us": 353.326,
+    "throughput_bps": 22641.98
+  },
+  "decryption": {
+    "n": 10000,
+    "total_sec": 3.639032,
+    "avg_us": 363.9032,
+    "throughput_bps": 21983.87
+  },
+  "memory": {
+    "rss_mb": 14.992,
+    "vms_mb": 25.539
+  },
+  "aes_comparison": {
+    "n": 10000,
+    "present_avg_us": 351.7811,
+    "present_throughput_bps": 22741.41,
+    "aes_avg_us": 0.9076,
+    "aes_throughput_bps": 17628579.28,
+    "aes_library": "cryptography",
+    "speedup_factor": 0.0026
+  }
+}

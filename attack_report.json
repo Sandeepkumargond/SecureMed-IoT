@@ -1,0 +1,82 @@
+{
+  "tool": "attack_simulation.py",
+  "cipher": "PRESENT-80",
+  "timestamp": "2026-11-21T04:51:58Z",
+  "bruteforce_80bit": {
+    "key_bits": 80,
+    "keyspace": 1208925819614629174706176,
+    "ops_per_sec": 1000000000000.0,
+    "seconds_avg": 604462909807.3146,
+    "years_avg": 19154.273766297647,
+    "universe_ages": 1.3879908526302642e-06
+  },
+  "bruteforce_32bit": {
+    "key_bits": 32,
+    "keyspace": 4294967296,
+    "ops_per_sec": 1000000000000.0,
+    "seconds_avg": 0.002147483648,
+    "years_avg": 6.804965041701524e-11,
+    "universe_ages": 4.93113408818951e-21
+  },
+  "bruteforce_56bit": {
+    "key_bits": 56,
+    "keyspace": 72057594037927936,
+    "ops_per_sec": 1000000000000.0,
+    "seconds_avg": 36028.79701896397,
+    "years_avg": 0.0011416836837707548,
+    "universe_ages": 8.273070172251846e-14
+  },
+  "known_plaintext_attack": {
+    "target_bits": 16,
+    "secret_key": 52227,
+    "found_key": 52227,
+    "match": true,
+    "attempts": 52228,
+    "time_sec": 20.6448,
+    "python_rate_keys_sec": 2529.8,
+    "extrapolated_80bit_years": 7571341244824.905
+  },
+  "timing_attack": {
+    "n_traces": 1000,
+    "noise_std_us": 0.5,
+    "mean_timing_us": 413.5633,
+    "std_timing_us": 98.1861,
+    "pearson_r": -0.048118,
+    "attack_success": false,
+    "conclusion": "No significant timing correlation \u2013 implementation appears robust."
+  },
+  "spa": {
+    "power_trace_length": 18,
+    "power_trace_sample": [
+      33.396,
+      4.034,
+      0.764,
+      3.712,
+      3.947,
+      2.422,
+      -1.901,
+      1.891
+    ],
+    "true_rk0_lsb8": "0xc5",
+    "spa_candidates": [],
+    "candidate_count": 0,
+    "attack_success": false,
+    "conclusion": "True key byte not in candidate list."
+  },
+  "dpa": {
+    "n_traces": 500,
+    "true_key_byte": "0xd6",
+    "best_guess": "0x6",
+    "dom_peak": 1.1141,
+    "success": false,
+    "conclusion": "DPA failed to recover key byte (noise may have obscured correlation)."
+  },
+  "masking_countermeasure": {
+    "masked_output_correct": true,
+    "n_traces": 500,
+    "unmasked_correlation": 0.746791,
+    "masked_correlation": 0.00989,
+    "reduction_factor": 75.5095,
+    "conclusion": "Masking effectively reduces power correlation."
+  }
+}
