@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SecureMed-IoT · PRESENT-80 Demo</title>
+<!-- Chart.js served locally — no CDN needed -->
+<script src="/static/js/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0a0f1e;--panel:#111827;--border:#1e293b;--accent:#38bdf8;
+  --accent2:#818cf8;--green:#34d399;--red:#f87171;--yellow:#fbbf24;
+  --text:#e2e8f0;--muted:#94a3b8;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+
+/* Header */
+header{background:linear-gradient(135deg,#0f172a,#1e293b);border-bottom:1px solid var(--border);
+  padding:1rem 1.5rem;display:flex;align-items:center;gap:1rem;position:sticky;top:0;z-index:100}
+.logo{font-size:1.5rem;font-weight:800;background:linear-gradient(90deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{color:var(--muted);font-size:.82rem}
+.badge{background:#1e3a4a;color:var(--accent);border:1px solid var(--accent);
+  padding:.15rem .55rem;border-radius:999px;font-size:.7rem;font-weight:700}
+.badges{margin-left:auto;display:flex;gap:.4rem;flex-wrap:wrap}
+
+/* Layout */
+.layout{display:grid;grid-template-columns:252px 1fr;min-height:calc(100vh - 68px)}
+
+/* Sidebar */
+nav{background:var(--panel);border-right:1px solid var(--border);padding:1rem .7rem;
+  display:flex;flex-direction:column;gap:.2rem;overflow-y:auto}
+.nav-sec{color:var(--muted);font-size:.68rem;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;padding:.6rem .8rem .2rem}
+.nb{display:flex;align-items:center;gap:.6rem;background:none;border:none;color:var(--text);
+  padding:.55rem .8rem;border-radius:8px;cursor:pointer;font-size:.86rem;text-align:left;
+  width:100%;transition:.12s}
+.nb:hover{background:#1e293b;color:var(--accent)}
+.nb.active{background:#0c2240;color:var(--accent);font-weight:600}
+.nb .ic{width:1.1rem;text-align:center;font-size:.95rem}
+.nb .nm{margin-left:auto;background:#1e293b;color:var(--muted);font-size:.68rem;
+  padding:.1rem .35rem;border-radius:4px;min-width:1.4rem;text-align:center}
+
+/* Main */
+main{padding:1.4rem 1.8rem;overflow-y:auto}
+.page{display:none}.page.active{display:block}
+h2{font-size:1.25rem;font-weight:700;margin-bottom:.3rem;color:var(--accent)}
+.pdesc{color:var(--muted);font-size:.86rem;margin-bottom:1.1rem;line-height:1.6}
+
+/* Cards */
+.cards{display:grid;gap:.9rem;margin-bottom:1.2rem}
+.c2{grid-template-columns:1fr 1fr}
+.c3{grid-template-columns:1fr 1fr 1fr}
+.c4{grid-template-columns:repeat(4,1fr)}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:.9rem 1.1rem}
+.card h3{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.4rem}
+.val{font-size:1.5rem;font-weight:700;color:var(--accent)}
+.unit{font-size:.72rem;color:var(--muted);margin-left:.3rem}
+.stat{text-align:center;padding:1rem}
+.stat .ico{font-size:1.8rem;margin-bottom:.4rem}
+.stat .lbl{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+
+/* Terminal */
+.twrap{background:#070d1a;border:1px solid #1e293b;border-radius:11px;overflow:hidden;margin-top:.5rem}
+.thead{background:#0f1929;padding:.45rem .9rem;display:flex;align-items:center;gap:.45rem;border-bottom:1px solid #1e293b}
+.dot{width:11px;height:11px;border-radius:50%}
+.dot.r{background:#f87171}.dot.y{background:#fbbf24}.dot.g{background:#34d399}
+.ttitle{color:var(--muted);font-size:.77rem;margin-left:.3rem}
+.term{font-family:'Cascadia Code','Fira Code','Courier New',monospace;font-size:.8rem;
+  line-height:1.65;color:#a3e0ff;padding:.9rem 1.1rem;height:400px;overflow-y:auto;
+  white-space:pre-wrap;word-break:break-all}
+.term .cmd{color:#fbbf24;font-weight:600}
+.term .success{color:#34d399;font-weight:600}
+.term .error{color:#f87171;font-weight:600}
+
+/* Buttons */
+.brow{display:flex;gap:.6rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:.35rem;padding:.5rem 1rem;
+  border-radius:8px;border:none;cursor:pointer;font-size:.86rem;font-weight:600;transition:.12s}
+.btn-p{background:var(--accent);color:#0a0f1e}.btn-p:hover{background:#7dd3fc}
+.btn-s{background:#1e293b;color:var(--text);border:1px solid var(--border)}.btn-s:hover{background:#334155}
+.btn-d{background:#991b1b;color:#fecaca;border:1px solid #f87171}.btn-d:hover{background:#7f1d1d}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.spin{display:none;width:14px;height:14px;border:2px solid rgba(0,0,0,.3);
+  border-top-color:#000;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.running .spin{display:inline-block}.running .rlbl{display:none}
+
+/* Forms */
+.frow{display:flex;gap:.7rem;margin-bottom:.9rem;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:.25rem;flex:1;min-width:190px}
+label{font-size:.74rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+input[type=text]{background:#0f1929;border:1px solid var(--border);color:var(--text);
+  padding:.45rem .75rem;border-radius:7px;font-family:'Cascadia Code','Fira Code',monospace;
+  font-size:.86rem;outline:none;width:100%}
+input:focus{border-color:var(--accent)}
+
+/* Result box */
+.rbox{background:#070d1a;border:1px solid var(--border);border-radius:9px;padding:.9rem;
+  font-family:'Cascadia Code','Fira Code',monospace;font-size:.83rem;line-height:1.9;min-height:110px}
+.rl{display:flex;gap:.8rem}.rlab{color:var(--muted);min-width:118px}.rval{color:var(--accent)}
+
+/* Table */
+.twrap2{overflow-x:auto;border-radius:9px;border:1px solid var(--border);margin-bottom:1rem}
+table{width:100%;border-collapse:collapse;font-size:.8rem}
+thead th{background:#0f1929;color:var(--muted);font-weight:600;text-transform:uppercase;
+  letter-spacing:.06em;padding:.55rem .85rem;text-align:left}
+tbody tr{border-top:1px solid var(--border)}
+tbody tr:hover{background:#0d1829}
+td{padding:.5rem .85rem;font-family:'Cascadia Code','Fira Code',monospace}
+.tag{padding:.12rem .45rem;border-radius:4px;font-size:.7rem;font-weight:700}
+.tok{background:#064e3b;color:#34d399}.tbad{background:#450a0a;color:#f87171}
+.twarn{background:#451a03;color:#fbbf24}
+
+/* Progress */
+.pbar-wrap{background:#1e293b;border-radius:999px;height:7px;overflow:hidden;margin:.4rem 0 .9rem}
+.pbar{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s}
+
+/* Toast */
+#toast{position:fixed;bottom:1.4rem;right:1.4rem;background:#1e3a4a;color:var(--accent);
+  border:1px solid var(--accent);padding:.6rem 1.1rem;border-radius:9px;font-size:.86rem;
+  font-weight:600;transform:translateY(60px);opacity:0;transition:.3s;z-index:999;pointer-events:none}
+#toast.show{transform:translateY(0);opacity:1}
+
+/* SSE status */
+.sse-badge{font-size:.7rem;padding:.15rem .5rem;border-radius:4px;margin-left:.5rem}
+.sse-running{background:#064e3b;color:#34d399}
+.sse-done{background:#1e293b;color:var(--muted)}
+.sse-err{background:#450a0a;color:#f87171}
+
+@media(max-width:780px){.layout{grid-template-columns:1fr}nav{display:none}.c2,.c3,.c4{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">🔐 SecureMed-IoT</div>
+    <div class="sub">PRESENT-80 Lightweight Cryptography · IoT Healthcare Demo</div>
+  </div>
+  <div class="badges">
+    <span class="badge">PRESENT-80</span>
+    <span class="badge">ISO/IEC 29192-2</span>
+    <span class="badge">64-bit Block · 80-bit Key</span>
+  </div>
+</header>
+
+<div class="layout">
+<!-- ═══════════════ Sidebar ═══════════════ -->
+<nav>
+  <div class="nav-sec">Overview</div>
+  <button class="nb active" onclick="go('dashboard')"><span class="ic">🏠</span> Dashboard</button>
+  <button class="nb" onclick="go('sandbox')"><span class="ic">🔬</span> Cipher Sandbox</button>
+
+  <div class="nav-sec">Demo Steps</div>
+  <button class="nb" onclick="go('s1')"><span class="ic">✅</span> Test Vectors<span class="nm">1</span></button>
+  <button class="nb" onclick="go('s2')"><span class="ic">🔎</span> Cipher Core<span class="nm">2</span></button>
+  <button class="nb" onclick="go('s3')"><span class="ic">🛡️</span> Data Integrity<span class="nm">3</span></button>
+  <button class="nb" onclick="go('s4')"><span class="ic">⚡</span> Benchmarks<span class="nm">4</span></button>
+  <button class="nb" onclick="go('s5')"><span class="ic">📡</span> Live Telemetry<span class="nm">5</span></button>
+  <button class="nb" onclick="go('s6')"><span class="ic">⚠️</span> Tamper Detection<span class="nm">6</span></button>
+  <button class="nb" onclick="go('s7')"><span class="ic">🔓</span> Attack Suite<span class="nm">7</span></button>
+  <button class="nb" onclick="go('s8')"><span class="ic">⚙️</span> Native C (GCC)<span class="nm">8</span></button>
+
+  <div class="nav-sec">Info</div>
+  <button class="nb" onclick="go('about')"><span class="ic">ℹ️</span> About</button>
+</nav>
+
+<!-- ═══════════════ Main ═══════════════ -->
+<main>
+
+<!-- ── Dashboard ── -->
+<div id="page-dashboard" class="page active">
+  <h2>System Dashboard</h2>
+  <p class="pdesc">SecureMed-IoT implements the PRESENT-80 lightweight block cipher (ISO/IEC 29192-2) on Arduino Uno and ESP32 for encrypting healthcare sensor data. This demo showcases the full verification &amp; security analysis pipeline.</p>
+
+  <div class="cards c4">
+    <div class="card stat"><div class="ico">🔑</div><div class="val">80-bit</div><div class="lbl">Key Size</div></div>
+    <div class="card stat"><div class="ico">📦</div><div class="val">64-bit</div><div class="lbl">Block Size</div></div>
+    <div class="card stat"><div class="ico">🔄</div><div class="val">31</div><div class="lbl">Cipher Rounds</div></div>
+    <div class="card stat"><div class="ico">🧪</div><div class="val">4+</div><div class="lbl">Test Vectors</div></div>
+  </div>
+
+  <div class="cards c2">
+    <div class="card">
+      <h3>Quick Benchmark (3 000 ops)</h3>
+      <div id="bm-load" style="color:var(--muted);font-size:.84rem">Running…</div>
+      <div id="bm-res" style="display:none">
+        <div style="font-size:.74rem;color:var(--muted);margin-bottom:.3rem">Encryption throughput</div>
+        <div class="pbar-wrap"><div class="pbar" id="pb-enc" style="width:0%"></div></div>
+        <div class="cards c2" style="margin:0">
+          <div><div style="font-size:.72rem;color:var(--muted)">Encrypt</div>
+            <div class="val" id="d-enc" style="font-size:1.2rem"></div><div class="unit">µs/block</div></div>
+          <div><div style="font-size:.72rem;color:var(--muted)">Decrypt</div>
+            <div class="val" id="d-dec" style="font-size:1.2rem"></div><div class="unit">µs/block</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Brute-Force Security (80-bit key)</h3>
+      <div id="bf-load" style="color:var(--muted);font-size:.84rem">Running…</div>
+      <div id="bf-res" style="display:none">
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:.5rem">At 10¹² ops/sec:</div>
+        <table style="font-size:.8rem">
+          <tr><td style="color:var(--muted);padding:.2rem 0">Years (avg)</td>
+              <td id="bf-yr" style="color:var(--green);padding-left:.9rem;font-weight:700"></td></tr>
+          <tr><td style="color:var(--muted);padding:.2rem 0">Universe ages</td>
+              <td id="bf-un" style="color:var(--accent2);padding-left:.9rem;font-weight:700"></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Demo Steps — click any to run</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.55rem;margin-top:.7rem">
+      <div class="step-tile" onclick="go('s1');runStep('unit_tests','b1')">
+        <div class="st-num">①</div><div class="st-title">Test Vectors</div>
+        <div class="st-desc">CHES 2007 official test vectors + 100 round-trips</div></div>
+      <div class="step-tile" onclick="go('s2');runStep('cipher_core','b2')">
+        <div class="st-num">②</div><div class="st-title">Cipher Core</div>
+        <div class="st-desc">S-Box, P-Layer, round key schedule inspection</div></div>
+      <div class="step-tile" onclick="go('s3');runStep('data_integrity','b3')">
+        <div class="st-num">③</div><div class="st-title">Data Integrity</div>
+        <div class="st-desc">CRC-16 + HMAC-SHA256 frame authentication</div></div>
+      <div class="step-tile" onclick="go('s5')">
+        <div class="st-num">⑤</div><div class="st-title">Live Telemetry</div>
+        <div class="st-desc">Virtual IoT node → ECG/HR → PRESENT-80 → Host</div></div>
+      <div class="step-tile" onclick="go('s6');runStep('tamper','b6')">
+        <div class="st-num">⑥</div><div class="st-title">Tamper Detection</div>
+        <div class="st-desc">Avalanche effect – bit flip → invalid vitals</div></div>
+      <div class="step-tile" onclick="go('s7');runStep('attacks','b7')">
+        <div class="st-num">⑦</div><div class="st-title">Attack Suite</div>
+        <div class="st-desc">Brute force, timing, SPA, DPA, masking</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Sandbox ── -->
+<div id="page-sandbox" class="page">
+  <h2>🔬 Cipher Sandbox</h2>
+  <p class="pdesc">Encrypt any 64-bit block with any 80-bit key. Instant round-trip verification included.</p>
+  <div class="frow">
+    <div class="field">
+      <label>Plaintext — 16 hex chars (64 bits)</label>
+      <input type="text" id="sb-pt" value="0000000000000000" maxlength="16" oninput="this.value=this.value.toUpperCase()"/>
+    </div>
+    <div class="field">
+      <label>Key — 20 hex chars (80 bits)</label>
+      <input type="text" id="sb-key" value="0123456789ABCDEF0123" maxlength="20" oninput="this.value=this.value.toUpperCase()"/>
+    </div>
+  </div>
+  <div class="brow">
+    <button class="btn btn-p" onclick="doEncrypt()">🔒 Encrypt</button>
+    <button class="btn btn-s" onclick="loadTV(0)">TV1 — all zeros</button>
+    <button class="btn btn-s" onclick="loadTV(1)">TV2 — all-1 key</button>
+    <button class="btn btn-s" onclick="loadTV(2)">TV3 — all-1 pt</button>
+    <button class="btn btn-s" onclick="loadTV(3)">TV4 — all ones</button>
+    <button class="btn btn-s" onclick="randInputs()">🎲 Random</button>
+  </div>
+  <div class="rbox" id="sb-res"><span style="color:var(--muted)">← Pick a test vector or enter values and click Encrypt</span></div>
+
+  <div style="margin-top:1.2rem">
+    <h3 style="font-size:.95rem;margin-bottom:.5rem;color:var(--accent2)">📋 Official Test Vectors (CHES 2007 / ISO 29192-2)</h3>
+    <div class="twrap2">
+      <table>
+        <thead><tr><th>#</th><th>Plaintext</th><th>Key (80-bit)</th><th>Ciphertext</th></tr></thead>
+        <tbody>
+          <tr onclick="loadTV(0)" style="cursor:pointer"><td>TV1</td><td>0000000000000000</td><td>00000000000000000000</td><td style="color:#34d399">5579C1387B228445</td></tr>
+          <tr onclick="loadTV(1)" style="cursor:pointer"><td>TV2</td><td>0000000000000000</td><td>FFFFFFFFFFFFFFFFFFFF</td><td style="color:#34d399">E72C46C0F5945049</td></tr>
+          <tr onclick="loadTV(2)" style="cursor:pointer"><td>TV3</td><td>FFFFFFFFFFFFFFFF</td><td>00000000000000000000</td><td style="color:#34d399">A112FFC72F68417B</td></tr>
+          <tr onclick="loadTV(3)" style="cursor:pointer"><td>TV4</td><td>FFFFFFFFFFFFFFFF</td><td>FFFFFFFFFFFFFFFFFFFF</td><td style="color:#34d399">3333DCD3213210D2</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="font-size:.75rem;color:var(--muted);margin-top:.4rem">💡 Click any row to auto-load</div>
+  </div>
+</div>
+
+<!-- ── Step 1 ── -->
+<div id="page-s1" class="page">
+  <h2>① Official CHES 2007 Test Vectors &amp; Unit Tests</h2>
+  <p class="pdesc">Runs the full unittest suite: 4 official test vectors from ISO/IEC 29192-2, 100 random round-trip encryptions, avalanche effect and key sensitivity checks.</p>
+  <div class="brow">
+    <button id="b1" class="btn btn-p" onclick="runStep('unit_tests','b1')">
+      <span class="spin"></span><span class="rlbl">▶ Run Tests</span></button>
+    <button class="btn btn-s" onclick="clearTerm('t1')">🗑 Clear</button>
+    <span id="st1" class="sse-badge sse-done" style="display:none"></span>
+  </div>
+  <div class="twrap"><div class="thead"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+    <span class="ttitle">python -m unittest discover</span></div>
+    <div class="term" id="t1"></div></div>
+</div>
+
+<!-- ── Step 2 ── -->
+<div id="page-s2" class="page">
+  <h2>② PRESENT-80 Cipher Core Inspection</h2>
+  <p class="pdesc">Runs the cipher module directly, printing each official test vector with the exact plaintext, key, and ciphertext in hex. Validates the inverse S-Box and P-Layer used during decryption.</p>
+  <div class="brow">
+    <button id="b2" class="btn btn-p" onclick="runStep('cipher_core','b2')">
+      <span class="spin"></span><span class="rlbl">▶ Run Cipher Core</span></button>
+    <button class="btn btn-s" onclick="clearTerm('t2')">🗑 Clear</button>
+    <span id="st2" class="sse-badge sse-done" style="display:none"></span>
+  </div>
+  <div class="twrap"><div class="thead"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+    <span class="ttitle">python/present.py</span></div>
+    <div class="term" id="t2"></div></div>
+</div>
+
+<!-- ── Step 3 ── -->
+<div id="page-s3" class="page">
+  <h2>③ Data Integrity &amp; Packet Framing</h2>
+  <p class="pdesc">42-byte healthcare telemetry frame: CRC-16/CCITT error detection (bytes 0–9) and HMAC-SHA256 authentication (full frame). Tests corruption detection and wrong-key rejection.</p>
+  <div class="brow">
+    <button id="b3" class="btn btn-p" onclick="runStep('data_integrity','b3')">
+      <span class="spin"></span><span class="rlbl">▶ Run Integrity Suite</span></button>
+    <button class="btn btn-s" onclick="clearTerm('t3')">🗑 Clear</button>
+    <span id="st3" class="sse-badge sse-done" style="display:none"></span>
+  </div>
+  <div class="twrap"><div class="thead"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+    <span class="ttitle">python/data_integrity.py</span></div>
+    <div class="term" id="t3"></div></div>
+</div>
+
+<!-- ── Step 4 ── -->
+<div id="page-s4" class="page">
+  <h2>⚡ Performance &amp; AES-128 Comparison</h2>
+  <p class="pdesc">Benchmarks PRESENT-80 on 10 000 blocks, compares latency and throughput against AES-128, and measures memory footprint (RSS/VMS).</p>
+  <div class="brow">
+    <button id="b4" class="btn btn-p" onclick="runStep('benchmarks','b4')">
+      <span class="spin"></span><span class="rlbl">▶ Run Full Benchmark (~30s)</span></button>
+    <button class="btn btn-s" onclick="clearTerm('t4')">🗑 Clear</button>
+    <button class="btn btn-s" onclick="quickBench()">⚡ Quick In-Process Benchmark</button>
+    <span id="st4" class="sse-badge sse-done" style="display:none"></span>
+  </div>
+  <div class="cards c3" id="qb-cards" style="display:none">
+    <div class="card"><h3>Encrypt latency</h3><div class="val" id="qb-enc">—</div><div class="unit">µs/block</div></div>
+    <div class="card"><h3>Decrypt latency</h3><div class="val" id="qb-dec">—</div><div class="unit">µs/block</div></div>
+    <div class="card"><h3>Throughput</h3><div class="val" id="qb-tp">—</div><div class="unit">bytes/sec</div></div>
+  </div>
+  <div class="twrap"><div class="thead"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+    <span class="ttitle">python/benchmark.py</span></div>
+    <div class="term" id="t4"></div></div>
+</div>
+
+<!-- ── Step 5 ── -->
+<div id="page-s5" class="page">
+  <h2>📡 End-to-End IoT Healthcare Telemetry</h2>
+  <p class="pdesc">Virtual IoT sensor generates synthetic ECG and Heart Rate readings, encrypts with PRESENT-80, and streams to the host decryption engine. All packets decoded and validated.</p>
+  <div class="brow">
+    <button class="btn btn-p" onclick="loadTel(false)">📡 Simulate Normal (6 packets)</button>
+    <button class="btn btn-d" onclick="loadTel(true)">⚠️ Inject Tampered Packet</button>
+    <button id="b5" class="btn btn-s" onclick="runStep('telemetry','b5')">
+      <span class="spin"></span><span class="rlbl">▶ Run via Terminal</span></button>
+    <button class="btn btn-s" onclick="clearTerm('t5')">🗑 Clear</button>
+    <span id="st5" class="sse-badge sse-done" style="display:none"></span>
+  </div>
+  <div id="tel-wrap" style="display:none">
+    <div class="twrap2">
+      <table>
+        <thead><tr><th>Pkt</th><th>Time(ms)</th><th>Plaintext</th><th>Ciphertext (PRESENT-80)</th><th>ECG</th><th>HR bpm</th><th>Status</th></tr></thead>
+        <tbody id="tel-body"></tbody>
+      </table>
+    </div>
+    <div class="card" style="margin-bottom:1rem">
+      <h3>ECG Waveform</h3>
+      <canvas id="ecg-canvas" height="90"></canvas>
+    </div>
+  </div>
+  <div class="twrap"><div class="thead"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+    <span class="ttitle">simulate_sensor_node.py → decrypt_host.py</span></div>
+    <div class="term" id="t5"></div></div>
+</div>
+
+<!-- ── Step 6 ── -->
+<div id="page-s6" class="page">
+  <h2>⚠️ Active Attacker — Tamper &amp; Anomaly Detection</h2>
+  <p class="pdesc">Simulates a MitM attacker flipping 1 bit in packet #5. Due to the PRESENT-80 Avalanche Effect, the decrypted payload produces non-physiological vitals which the host flags INVALID immediately.</p>
+  <div class="brow">
+    <button id="b6" class="btn btn-d" onclick="runStep('tamper','b6')">
+      <span class="spin"></span><span class="rlbl">⚠️ Inject Bit-Flip Attack</span></button>
+    <button class="btn btn-s" onclick="clearTerm('t6')">🗑 Clear</button>
+    <span id="st6" class="sse-badge sse-done" style="display:none"></span>
+  </div>
+  <div class="card" style="margin-bottom:.9rem;border-color:#f87171">
+    <h3 style="color:#f87171">How the Avalanche Effect Works</h3>
+    <p style="font-size:.84rem;color:var(--muted);line-height:1.7;margin-top:.4rem">
+      Flipping even <strong style="color:var(--text)">1 bit</strong> in the ciphertext propagates through 31 rounds of S-Box substitution and P-Layer bit permutation, flipping ≈50% of output bits. Any valid ECG/HR value becomes garbage — instantly detectable by the range validator.
+    </p>
+  </div>
+  <div class="twrap"><div class="thead"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+    <span class="ttitle">bit-flip attack demo</span></div>
+    <div class="term" id="t6"></div></div>
+</div>
+
+<!-- ── Step 7 ── -->
+<div id="page-s7" class="page">
+  <h2>🔓 Security Evaluation &amp; Side-Channel Attack Suite</h2>
+  <p class="pdesc">Full cryptanalysis: brute-force time estimation, live 16-bit key crack (proves concept), timing side-channel simulation, Simple Power Analysis (SPA), Differential Power Analysis (DPA), and 1st-order Boolean masking evaluation.</p>
+  <div class="brow">
+    <button id="b7" class="btn btn-p" onclick="runStep('attacks','b7')">
+      <span class="spin"></span><span class="rlbl">🔓 Run Full Attack Suite (~30s)</span></button>
+    <button class="btn btn-s" onclick="clearTerm('t7')">🗑 Clear</button>
+    <button class="btn btn-s" onclick="toggleBF()">🧮 Brute-Force Calculator</button>
+    <span id="st7" class="sse-badge sse-done" style="display:none"></span>
+  </div>
+  <div id="bf-calc" style="display:none;margin-bottom:.9rem">
+    <div class="card">
+      <h3>Brute-Force Time Estimator</h3>
+      <div class="frow" style="margin-top:.5rem">
+        <div class="field" style="max-width:170px"><label>Key bits</label>
+          <input type="text" id="bf-bits-in" value="80"/></div>
+        <div style="display:flex;align-items:flex-end">
+          <button class="btn btn-s" onclick="calcBF()">Calculate</button></div>
+      </div>
+      <div class="rbox" id="bf-out" style="min-height:70px;margin-top:.5rem"></div>
+    </div>
+  </div>
+  <div class="twrap"><div class="thead"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+    <span class="ttitle">attack_simulation.py</span></div>
+    <div class="term" id="t7"></div></div>
+</div>
+
+<!-- ── Step 8 ── -->
+<div id="page-s8" class="page">
+  <h2>⚙️ Native C Microcontroller Firmware (GCC)</h2>
+  <p class="pdesc">Compiles the exact Arduino C firmware (<code>arduino/present_cipher.c</code>) natively using GCC -O2 and runs the test harness — zero-warning compilation, sub-microsecond native C execution.</p>
+  <div class="brow">
+    <button id="b8" class="btn btn-p" onclick="runStep('native_c','b8')">
+      <span class="spin"></span><span class="rlbl">⚙️ Compile &amp; Run GCC</span></button>
+    <button class="btn btn-s" onclick="clearTerm('t8')">🗑 Clear</button>
+    <span id="st8" class="sse-badge sse-done" style="display:none"></span>
+  </div>
+  <div class="card" style="margin-bottom:.9rem">
+    <h3>Compilation Command</h3>
+    <div style="font-family:'Cascadia Code','Fira Code',monospace;font-size:.84rem;color:var(--accent);margin-top:.3rem">
+      gcc -O2 tests/test_c_native.c arduino/present_cipher.c -Iarduino -o tests/test_c_native
+    </div>
+  </div>
+  <div class="twrap"><div class="thead"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+    <span class="ttitle">gcc → tests/test_c_native</span></div>
+    <div class="term" id="t8"></div></div>
+</div>
+
+<!-- ── About ── -->
+<div id="page-about" class="page">
+  <h2>ℹ️ About This Project</h2>
+  <p class="pdesc">SecureMed-IoT — Lightweight Cryptography for Healthcare IoT Sensor Nodes</p>
+  <div class="cards c2">
+    <div class="card">
+      <h3>Cipher Specification</h3>
+      <table style="font-size:.82rem;width:100%;margin-top:.4rem">
+        <tr><td style="color:var(--muted);padding:.25rem 0">Algorithm</td><td style="color:var(--accent)">PRESENT-80</td></tr>
+        <tr><td style="color:var(--muted);padding:.25rem 0">Standard</td><td>ISO/IEC 29192-2 · CHES 2007</td></tr>
+        <tr><td style="color:var(--muted);padding:.25rem 0">Block size</td><td>64 bits</td></tr>
+        <tr><td style="color:var(--muted);padding:.25rem 0">Key size</td><td>80 bits (10 bytes)</td></tr>
+        <tr><td style="color:var(--muted);padding:.25rem 0">Rounds</td><td>31 (+ final key addition)</td></tr>
+        <tr><td style="color:var(--muted);padding:.25rem 0">S-Box</td><td>4-bit → 4-bit (16 entries)</td></tr>
+        <tr><td style="color:var(--muted);padding:.25rem 0">P-Layer</td><td>P(i) = (i·16) mod 63</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>64-bit Payload Layout</h3>
+      <div style="font-family:'Cascadia Code','Fira Code',monospace;font-size:.82rem;line-height:2;margin-top:.4rem">
+        <span style="color:var(--accent)">[63:32]</span> ECG raw (12-bit ADC → 32-bit field)<br/>
+        <span style="color:var(--accent)">[31:16]</span> Heart Rate (40–200 bpm)<br/>
+        <span style="color:var(--accent)">[15:0]</span>  Timestamp (ms, low 16 bits)<br/>
+        <span style="color:var(--yellow)">[8:10]</span>  CRC-16/CCITT — bytes 0–7<br/>
+        <span style="color:var(--accent2)">[10:42]</span> HMAC-SHA256 — bytes 0–9<br/>
+        <strong style="color:var(--green)">Frame total: 42 bytes</strong>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div><!-- .layout -->
+
+<div id="toast"></div>
+
+<style>
+.step-tile{padding:.65rem .8rem;background:#0f1929;border:1px solid var(--border);
+  border-radius:8px;cursor:pointer;transition:.12s}
+.step-tile:hover{border-color:var(--accent);background:#0c2240}
+.st-num{font-size:1.1rem;margin-bottom:.2rem}
+.st-title{font-weight:700;font-size:.88rem;margin-bottom:.15rem}
+.st-desc{font-size:.75rem;color:var(--muted)}
+</style>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  Navigation
+// ═══════════════════════════════════════════════════════════
+function go(id) {
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
+  document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('active')});
+  var pg = document.getElementById('page-'+id);
+  if(pg) pg.classList.add('active');
+  document.querySelectorAll('.nb').forEach(function(b){
+    var oc = b.getAttribute('onclick')||'';
+    if(oc.indexOf("'"+id+"'")>-1) b.classList.add('active');
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SSE-based terminal streaming
+// ═══════════════════════════════════════════════════════════
+var termMap = {
+  unit_tests:    {term:'t1', stat:'st1', btn:'b1'},
+  cipher_core:   {term:'t2', stat:'st2', btn:'b2'},
+  data_integrity:{term:'t3', stat:'st3', btn:'b3'},
+  benchmarks:    {term:'t4', stat:'st4', btn:'b4'},
+  telemetry:     {term:'t5', stat:'st5', btn:'b5'},
+  tamper:        {term:'t6', stat:'st6', btn:'b6'},
+  attacks:       {term:'t7', stat:'st7', btn:'b7'},
+  native_c:      {term:'t8', stat:'st8', btn:'b8'},
+};
+
+function runStep(step, btnId) {
+  var info = termMap[step];
+  if(!info) return;
+  var btn  = document.getElementById(btnId||info.btn);
+  if(btn && btn.disabled) return;
+
+  var term = document.getElementById(info.term);
+  var stat = document.getElementById(info.stat);
+  if(term) term.innerHTML = '';
+
+  if(btn){ btn.classList.add('running'); btn.disabled = true; }
+  if(stat){ stat.style.display='inline'; stat.className='sse-badge sse-running'; stat.textContent='⬤ running'; }
+
+  fetch('/api/run', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({step: step})
+  }).then(function(r){return r.json()}).then(function(d){
+    if(d.error){
+      if(term) appendLine(info.term, "<span class='error'>"+d.error+"</span>");
+      if(btn){ btn.classList.remove('running'); btn.disabled=false; }
+      return;
+    }
+    listenSSE(d.sid, info.term, info.stat, btn);
+  }).catch(function(e){
+    if(term) appendLine(info.term, "<span class='error'>Request failed: "+e+"</span>");
+    if(btn){ btn.classList.remove('running'); btn.disabled=false; }
+  });
+}
+
+function listenSSE(sid, termId, statId, btn) {
+  var es = new EventSource('/api/stream/'+sid);
+  es.addEventListener('line', function(e){
+    var data = JSON.parse(e.data);
+    appendLine(termId, data.line);
+  });
+  es.addEventListener('done', function(e){
+    var data = JSON.parse(e.data);
+    es.close();
+    if(btn){ btn.classList.remove('running'); btn.disabled=false; }
+    var stat = document.getElementById(statId);
+    if(stat){
+      stat.className = data.returncode===0 ? 'sse-badge sse-done' : 'sse-badge sse-err';
+      stat.textContent = data.returncode===0 ? '✓ done' : '✗ failed';
+    }
+  });
+  es.onerror = function(){
+    es.close();
+    if(btn){ btn.classList.remove('running'); btn.disabled=false; }
+  };
+}
+
+function appendLine(termId, html) {
+  var t = document.getElementById(termId);
+  if(!t) return;
+  var d = document.createElement('div');
+  d.innerHTML = colorize(html);
+  t.appendChild(d);
+  t.scrollTop = t.scrollHeight;
+}
+
+function clearTerm(id) {
+  var t = document.getElementById(id);
+  if(t) t.innerHTML = '';
+}
+
+function colorize(text) {
+  // Strip ANSI escape codes
+  text = text.replace(/\x1b\[[0-9;]*m/g,'');
+  // Highlight keywords
+  text = text
+    .replace(/\b(PASS|ok)\b/g,"<span style='color:#34d399;font-weight:700'>$1</span>")
+    .replace(/\b(ALL PASS)\b/g,"<span style='color:#34d399;font-weight:700'>$1</span>")
+    .replace(/([✓])/g,"<span style='color:#34d399;font-weight:700'>$1</span>")
+    .replace(/\b(FAIL|ERROR)\b/g,"<span style='color:#f87171;font-weight:700'>$1</span>")
+    .replace(/([✗])/g,"<span style='color:#f87171;font-weight:700'>$1</span>")
+    .replace(/\[INVALID/g,"<span style='color:#f87171;font-weight:700'>[INVALID</span>")
+    .replace(/\[VALID\b/g,"<span style='color:#34d399;font-weight:700'>[VALID</span>")
+    .replace(/\[TAMPERED!\]/g,"<span style='color:#f87171;font-weight:800'>[TAMPERED!]</span>")
+    .replace(/\b(WARN|WARNING)\b/g,"<span style='color:#fbbf24'>$1</span>");
+  return text;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  Cipher Sandbox
+// ═══════════════════════════════════════════════════════════
+var TVS = [
+  {pt:'0000000000000000', key:'00000000000000000000'},
+  {pt:'0000000000000000', key:'FFFFFFFFFFFFFFFFFFFF'},
+  {pt:'FFFFFFFFFFFFFFFF',  key:'00000000000000000000'},
+  {pt:'FFFFFFFFFFFFFFFF',  key:'FFFFFFFFFFFFFFFFFFFF'},
+];
+
+function loadTV(n) {
+  document.getElementById('sb-pt').value  = TVS[n].pt;
+  document.getElementById('sb-key').value = TVS[n].key;
+  doEncrypt();
+}
+
+function randInputs() {
+  var h=function(){return [...Array(16)].map(function(){return'0123456789ABCDEF'[Math.floor(Math.random()*16)]}).join('')};
+  document.getElementById('sb-pt').value  = h();
+  document.getElementById('sb-key').value = h()+h().slice(0,4);
+  doEncrypt();
+}
+
+function doEncrypt() {
+  var pt  = document.getElementById('sb-pt').value.trim();
+  var key = document.getElementById('sb-key').value.trim();
+  fetch('/api/encrypt?plaintext='+pt+'&key='+key)
+    .then(function(r){return r.json()})
+    .then(function(d){
+      var box = document.getElementById('sb-res');
+      if(d.error){ box.innerHTML="<span style='color:#f87171'>Error: "+d.error+"</span>"; return; }
+      var mc = d.match ? '#34d399':'#f87171';
+      box.innerHTML =
+        "<div class='rl'><span class='rlab'>Plaintext</span><span class='rval'>"+d.plaintext+"</span></div>"+
+        "<div class='rl'><span class='rlab'>Key (80-bit)</span><span class='rval'>"+d.key+"</span></div>"+
+        "<div class='rl'><span class='rlab' style='color:#fbbf24'>Ciphertext</span><span style='color:#fbbf24;font-weight:700'>"+d.ciphertext+"</span></div>"+
+        "<div class='rl'><span class='rlab'>Decrypt back</span><span class='rval'>"+d.roundtrip+"</span></div>"+
+        "<div class='rl'><span class='rlab'>Round-trip</span><span style='color:"+mc+";font-weight:700'>"+(d.match?'✓ MATCH':'✗ MISMATCH')+"</span></div>";
+    }).catch(function(e){
+      document.getElementById('sb-res').innerHTML="<span style='color:#f87171'>Fetch error: "+e+"</span>";
+    });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  Telemetry table + ECG chart
+// ═══════════════════════════════════════════════════════════
+var ecgChart = null;
+
+function loadTel(tamper) {
+  fetch('/api/sensor_live?count=6&tamper='+tamper)
+    .then(function(r){return r.json()})
+    .then(function(d){
+      var tbody = document.getElementById('tel-body');
+      tbody.innerHTML = '';
+      d.packets.forEach(function(p){
+        var tam = p.tampered ? "<span class='tag twarn'>TAMPERED</span> ":'';
+        var st  = p.valid ? "<span class='tag tok'>✓ VALID</span>":"<span class='tag tbad'>✗ INVALID</span>";
+        tbody.innerHTML += "<tr><td>"+p.packet+"</td><td>"+p.time_ms+"</td>"+
+          "<td style='color:#818cf8'>"+p.plaintext+"</td>"+
+          "<td style='color:#fbbf24'>"+p.ciphertext+" "+tam+"</td>"+
+          "<td>"+p.ecg_dec+"</td><td>"+p.hr_dec+"</td><td>"+st+"</td></tr>";
+      });
+      document.getElementById('tel-wrap').style.display = 'block';
+
+      // ECG Chart using Chart.js (served locally)
+      var labels = d.packets.map(function(p){return 'P'+p.packet});
+      var vals   = d.packets.map(function(p){return p.valid ? p.ecg_dec : null});
+      var ptClrs = d.packets.map(function(p){return p.valid?'#38bdf8':'#f87171'});
+      var ctx = document.getElementById('ecg-canvas').getContext('2d');
+      if(ecgChart) ecgChart.destroy();
+      ecgChart = new Chart(ctx,{
+        type:'line',
+        data:{
+          labels: labels,
+          datasets:[{
+            label:'ECG (ADC counts)',
+            data: vals,
+            borderColor:'#38bdf8',
+            backgroundColor:'rgba(56,189,248,0.07)',
+            borderWidth:2,
+            pointRadius:6,
+            pointBackgroundColor: ptClrs,
+            tension:0.4,
+            spanGaps:false
+          }]
+        },
+        options:{
+          responsive:true,
+          plugins:{legend:{labels:{color:'#e2e8f0'}}},
+          scales:{
+            x:{ticks:{color:'#94a3b8'},grid:{color:'#1e293b'}},
+            y:{ticks:{color:'#94a3b8'},grid:{color:'#1e293b'},
+               title:{display:true,text:'ECG ADC value',color:'#94a3b8'}}
+          }
+        }
+      });
+      toast(tamper ? '⚠️ Tampered packet injected — watch for INVALID!' : '✓ Telemetry loaded. All valid.');
+    });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  Quick Benchmark
+// ═══════════════════════════════════════════════════════════
+function quickBench() {
+  document.getElementById('qb-cards').style.display = 'grid';
+  document.getElementById('qb-enc').textContent='…';
+  document.getElementById('qb-dec').textContent='…';
+  document.getElementById('qb-tp').textContent='…';
+  fetch('/api/benchmark_quick?n=3000').then(function(r){return r.json()}).then(function(d){
+    document.getElementById('qb-enc').textContent = d.enc_avg_us+' µs';
+    document.getElementById('qb-dec').textContent = d.dec_avg_us+' µs';
+    document.getElementById('qb-tp').textContent  = d.enc_throughput.toLocaleString()+' B/s';
+    toast('Quick benchmark done!');
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  Brute-Force calculator
+// ═══════════════════════════════════════════════════════════
+function toggleBF() {
+  var el = document.getElementById('bf-calc');
+  el.style.display = el.style.display==='none' ? 'block' : 'none';
+}
+
+function calcBF() {
+  var bits = parseInt(document.getElementById('bf-bits-in').value)||80;
+  fetch('/api/brute_force_estimate?bits='+bits).then(function(r){return r.json()}).then(function(d){
+    document.getElementById('bf-out').innerHTML =
+      "<div class='rl'><span class='rlab'>Key bits</span><span class='rval'>"+d.bits+"</span></div>"+
+      "<div class='rl'><span class='rlab'>Avg years</span><span style='color:#34d399;font-weight:700'>"+d.years_avg+"</span></div>"+
+      "<div class='rl'><span class='rlab'>Universe ages</span><span style='color:#818cf8;font-weight:700'>"+d.universe_ages+"</span></div>";
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  Toast
+// ═══════════════════════════════════════════════════════════
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(function(){el.classList.remove('show')},3000);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  On page load: fetch dashboard widgets
+// ═══════════════════════════════════════════════════════════
+(function(){
+  fetch('/api/benchmark_quick?n=2000').then(function(r){return r.json()}).then(function(d){
+    document.getElementById('bm-load').style.display='none';
+    document.getElementById('bm-res').style.display='block';
+    document.getElementById('d-enc').textContent=d.enc_avg_us;
+    document.getElementById('d-dec').textContent=d.dec_avg_us;
+    var pct = Math.min(100, d.enc_avg_us/5);
+    document.getElementById('pb-enc').style.width=pct+'%';
+  }).catch(function(){});
+
+  fetch('/api/brute_force_estimate?bits=80').then(function(r){return r.json()}).then(function(d){
+    document.getElementById('bf-load').style.display='none';
+    document.getElementById('bf-res').style.display='block';
+    document.getElementById('bf-yr').textContent=d.years_avg;
+    document.getElementById('bf-un').textContent=d.universe_ages;
+  }).catch(function(){});
+})();
+</script>
+</body>
+</html>

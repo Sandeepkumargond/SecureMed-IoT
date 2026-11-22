@@ -12,6 +12,7 @@ __pycache__/
 *.hex
 *.elf
 *.bin
+tests/test_c_native
 build/
 .pio/
 

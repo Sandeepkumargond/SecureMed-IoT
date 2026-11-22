@@ -73,6 +73,10 @@ arduino-cli upload  --fqbn arduino:avr:uno -p /dev/ttyUSB0 arduino/
 
 # 6. Listen to encrypted output
 python python/decrypt_serial.py --port /dev/ttyUSB0 --baud 115200
+
+# 7. Launch Interactive Web Demo UI
+cd ui && python3 app.py
+# Open http://localhost:5050 in your browser
 ```
 
 ---

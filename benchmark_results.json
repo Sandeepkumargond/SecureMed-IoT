@@ -1,28 +1,28 @@
 {
-  "timestamp": "2026-11-21T04:50:46Z",
+  "timestamp": "2026-11-22T11:46:31Z",
   "encryption": {
     "n": 10000,
-    "total_sec": 3.53326,
-    "avg_us": 353.326,
-    "throughput_bps": 22641.98
+    "total_sec": 1.776621,
+    "avg_us": 177.6621,
+    "throughput_bps": 45029.29
   },
   "decryption": {
     "n": 10000,
-    "total_sec": 3.639032,
-    "avg_us": 363.9032,
-    "throughput_bps": 21983.87
+    "total_sec": 1.852879,
+    "avg_us": 185.2879,
+    "throughput_bps": 43176.06
   },
   "memory": {
-    "rss_mb": 14.992,
-    "vms_mb": 25.539
+    "rss_mb": 14.977,
+    "vms_mb": 25.535
   },
   "aes_comparison": {
     "n": 10000,
-    "present_avg_us": 351.7811,
-    "present_throughput_bps": 22741.41,
-    "aes_avg_us": 0.9076,
-    "aes_throughput_bps": 17628579.28,
+    "present_avg_us": 214.5091,
+    "present_throughput_bps": 37294.45,
+    "aes_avg_us": 0.2218,
+    "aes_throughput_bps": 72142101.91,
     "aes_library": "cryptography",
-    "speedup_factor": 0.0026
+    "speedup_factor": 0.001
   }
 }
